@@ -11,9 +11,9 @@ jobs:
     steps:
       - name: Mirror repository
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
           git clone --mirror https://gitea.com/Kitty314/Kitty-enc.git
           cd Kitty-enc.git
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/kitty314/Kitty-enc.git
+          git remote set-url origin https://x-access-token:${MIRROR_TOKEN}@github.com/kitty314/Kitty-enc.git
           git push --mirror
