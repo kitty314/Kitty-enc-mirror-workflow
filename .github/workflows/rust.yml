@@ -1,0 +1,68 @@
+name: Rust Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-C target-feature=+crt-static"
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-amd64
+          - os: windows-latest
+            target: windows-amd64
+          - os: macos-latest
+            target: macos-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: kitty314/Kitty-enc
+          ref: main
+
+      - name: Build
+        run: cargo build --verbose --release
+
+      - name: Archive binary
+        run: |
+          mkdir -p artifacts
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp target/release/kitty_enc.exe artifacts/kitty_enc-${{ matrix.target }}.exe
+          else
+            cp target/release/kitty_enc artifacts/kitty_enc-${{ matrix.target }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitty_enc-${{ matrix.target }}
+          path: artifacts/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        if: ${{ success() }}
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          files: artifacts/*
+          generate_release_notes: true
