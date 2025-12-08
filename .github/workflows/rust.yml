@@ -56,16 +56,22 @@ jobs:
           $env:RUSTFLAGS="-C target-feature=+crt-static"
           cargo build --release --verbose
 
-      # 打包压缩文件（保持原始文件名，压缩包区分）
-      - name: Package artifact
+      # 打包压缩文件（Linux/macOS）
+      - name: Package artifact (Linux/macOS)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           mkdir -p dist
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            zip -j dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.zip target/release/kitty_enc.exe
-          else
-            tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C target/release kitty_enc
-          fi
+          tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C target/release kitty_enc
+
+      # 打包压缩文件（Windows）
+      - name: Package artifact (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Compress-Archive -Path target/release/kitty_enc.exe -DestinationPath dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.zip
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -73,29 +79,31 @@ jobs:
           name: kitty_enc-${{ matrix.target }}-${{ matrix.crt }}
           path: dist/
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
+release:
+  needs: build
+  runs-on: ubuntu-latest
+  steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
 
-      - name: List artifacts
-        run: ls -R artifacts/
+    - name: List artifacts
+      run: ls -R artifacts/
 
-      - name: Generate SHA256 checksums
-        run: |
-          cd artifacts
-          find . -type f -exec sha256sum {} \; > SHA256SUMS.txt
-          cat SHA256SUMS.txt
+    - name: Generate SHA256 checksums
+      run: |
+        cd artifacts
+        find . -type f -exec sha256sum {} \; > SHA256SUMS.txt
+        cat SHA256SUMS.txt
 
-      - name: Upload Release
-        uses: softprops/action-gh-release@v2
-        if: ${{ success() }}
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          files: artifacts/**/*
-          prerelease: true
-          body_path: artifacts/SHA256SUMS.txt
+    - name: Upload Release
+      uses: softprops/action-gh-release@v2
+      if: ${{ success() }}
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        files: |
+          artifacts/**/*
+          artifacts/SHA256SUMS.txt
+        prerelease: true
+        body_path: artifacts/SHA256SUMS.txt
