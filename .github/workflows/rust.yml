@@ -85,6 +85,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+  
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -98,6 +101,19 @@ jobs:
           cd artifacts
           find . -type f -exec sha256sum {} \; > SHA256SUMS.txt
           cat SHA256SUMS.txt
+  
+      # 自动打 tag
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse ${{ github.event.inputs.version }} >/dev/null 2>&1; then
+            echo "Tag already exists"
+          else
+            git tag ${{ github.event.inputs.version }}
+            git push origin ${{ github.event.inputs.version }}
+          fi
+      
   
       - name: Upload Release
         uses: softprops/action-gh-release@v2
