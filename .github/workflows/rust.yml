@@ -35,14 +35,19 @@ jobs:
       - name: Build
         run: cargo build --verbose --release
 
-      - name: Archive binary
+      # Linux/macOS 归档
+      - name: Archive binary (Linux/macOS)
+        if: runner.os != 'Windows'
         run: |
           mkdir -p artifacts
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp target/release/kitty_enc.exe artifacts/kitty_enc-${{ matrix.target }}.exe
-          else
-            cp target/release/kitty_enc artifacts/kitty_enc-${{ matrix.target }}
-          fi
+          cp target/release/kitty_enc artifacts/kitty_enc-${{ matrix.target }}
+
+      # Windows 归档
+      - name: Archive binary (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir artifacts
+          copy target\release\kitty_enc.exe artifacts\kitty_enc-${{ matrix.target }}.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -59,10 +64,13 @@ jobs:
         with:
           path: artifacts/
 
+      - name: List artifacts
+        run: ls -R artifacts/
+
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         if: ${{ success() }}
         with:
           tag_name: ${{ github.event.inputs.version }}
-          files: artifacts/*
+          files: artifacts/**/*
           generate_release_notes: true
