@@ -90,8 +90,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          BIN_PATH="target/aarch64-unknown-linux-musl/release/kitty_enc"
-          tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH
+          BIN_PATH="target/aarch64-unknown-linux-musl/release"
+          tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
 
 
       # 打包压缩文件（Windows）
