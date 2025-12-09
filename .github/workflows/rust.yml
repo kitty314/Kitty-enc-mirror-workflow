@@ -54,14 +54,14 @@ jobs:
         if: matrix.target != 'windows-amd64' && matrix.crt == 'dynamic'
         run: cargo build --release --verbose
 
-      # Linux 静态构建（musl）
-      - name: Build (Linux static musl)
-        if: matrix.target != 'windows-amd64' && matrix.crt == 'static'
+      # Linux Arm64 静态构建（musl）
+      - name: Build (Linux Arm64 static musl)
+        if: matrix.target == 'linux-arm64' && matrix.crt == 'static'
         run: |
-          rustup target add x86_64-unknown-linux-musl
           sudo apt-get update && sudo apt-get install -y musl-tools
-          cargo build --release --verbose --target x86_64-unknown-linux-musl
-          
+          rustup target add aarch64-unknown-linux-musl
+          cargo build --release --target aarch64-unknown-linux-musl
+
       # Windows 构建（动态 CRT）
       - name: Build (Windows dynamic CRT)
         if: matrix.target == 'windows-amd64' && matrix.crt == 'dynamic'
@@ -84,13 +84,13 @@ jobs:
           mkdir -p dist
           tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C target/release kitty_enc
           
-      # 打包压缩文件（Linux/macOS）静态构建（musl） 
-      - name: Package artifact (Linux/macOS)
-        if: matrix.target != 'windows-amd64' && matrix.crt == 'static'
+      # 打包压缩文件（Linux Arm64）静态构建（musl） 
+      - name: Package artifact (Linux Arm64 static musl)
+        if: matrix.target == 'linux-arm64' && matrix.crt == 'static'
         shell: bash
         run: |
           mkdir -p dist
-          BIN_PATH="target/x86_64-unknown-linux-musl/release/kitty_enc"
+          BIN_PATH="target/aarch64-unknown-linux-musl/release/kitty_enc"
           tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH
 
 
