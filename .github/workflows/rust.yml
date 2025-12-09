@@ -78,7 +78,7 @@ jobs:
 
       # 打包压缩文件（Linux/macOS）
       - name: Package artifact (Linux/macOS)
-        if: matrix.target != 'windows-amd64'
+        if: matrix.target != 'windows-amd64' && matrix.crt == 'dynamic'
         shell: bash
         run: |
           mkdir -p dist
@@ -86,7 +86,7 @@ jobs:
           
       # 打包压缩文件（Linux/macOS）静态构建（musl） 
       - name: Package artifact (Linux/macOS)
-        if: matrix.target != 'windows-amd64'
+        if: matrix.target != 'windows-amd64' && matrix.crt == 'static'
         shell: bash
         run: |
           mkdir -p dist
