@@ -20,15 +20,23 @@ jobs:
           - os: ubuntu-latest
             target: linux-amd64
             crt: dynamic
+            
           - os: ubuntu-24.04-arm
             target: linux-arm64
             crt: dynamic
+            
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+            crt: static
+            
           - os: macos-latest
             target: macos-arm64
             crt: dynamic
+            
           - os: windows-latest
             target: windows-amd64
             crt: dynamic
+            
           - os: windows-latest
             target: windows-amd64
             crt: static
@@ -37,23 +45,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           repository: kitty314/Kitty-enc
           ref: main
 
       # Linux/macOS 构建
       - name: Build (Linux/macOS)
-        if: runner.os != 'Windows'
+        if: matrix.target != 'windows-amd64' && matrix.crt == 'dynamic'
         run: cargo build --release --verbose
 
+      # Linux 静态构建（musl）
+      - name: Build (Linux static musl)
+        if: matrix.target != 'windows-amd64' && matrix.crt == 'static'
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          sudo apt-get update && sudo apt-get install -y musl-tools
+          cargo build --release --verbose --target x86_64-unknown-linux-musl
+          
       # Windows 构建（动态 CRT）
       - name: Build (Windows dynamic CRT)
-        if: runner.os == 'Windows' && matrix.crt == 'dynamic'
+        if: matrix.target == 'windows-amd64' && matrix.crt == 'dynamic'
         shell: pwsh
         run: cargo build --release --verbose
 
       # Windows 构建（静态 CRT）
       - name: Build (Windows static CRT)
-        if: runner.os == 'Windows' && matrix.crt == 'static'
+        if: matrix.target == 'windows-amd64' && matrix.crt == 'static'
         shell: pwsh
         run: |
           $env:RUSTFLAGS="-C target-feature=+crt-static"
@@ -61,15 +78,25 @@ jobs:
 
       # 打包压缩文件（Linux/macOS）
       - name: Package artifact (Linux/macOS)
-        if: runner.os != 'Windows'
+        if: matrix.target != 'windows-amd64'
         shell: bash
         run: |
           mkdir -p dist
           tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C target/release kitty_enc
+          
+      # 打包压缩文件（Linux/macOS）静态构建（musl） 
+      - name: Package artifact (Linux/macOS)
+        if: matrix.target != 'windows-amd64'
+        shell: bash
+        run: |
+          mkdir -p dist
+          BIN_PATH="target/x86_64-unknown-linux-musl/release/kitty_enc"
+          tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH
+
 
       # 打包压缩文件（Windows）
       - name: Package artifact (Windows)
-        if: runner.os == 'Windows'
+        if: matrix.target == 'windows-amd64'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist
