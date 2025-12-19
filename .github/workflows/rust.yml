@@ -156,4 +156,4 @@ jobs:
           files: |
             artifacts/**/*
           prerelease: true
-          body: ${{ github.event.inputs.version }}测试版
+          body: ${{ github.event.inputs.version }}测试版， 0.3.8及以后的版本与先前的版本不兼容
