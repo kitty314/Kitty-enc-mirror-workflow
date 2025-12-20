@@ -104,11 +104,9 @@ jobs:
           sudo mkdir -p /opt/riscv64-linux-musl
           sudo tar -xzf x86_64-riscv64-linux-musl-toolchain.tar.gz -C /opt/riscv64-linux-musl
           export PATH=/opt/riscv64-linux-musl/bin:$PATH
-          export LD_LIBRARY_PATH=/opt/riscv64-linux-musl/lib:/usr/local/lib:/usr/lib:/lib:/usr/share/miniconda/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/opt/riscv64-linux-musl/lib:/usr/local/lib:/usr/lib:/lib:$LD_LIBRARY_PATH
           rustup target add riscv64gc-unknown-linux-musl
           cargo build --release --target=riscv64gc-unknown-linux-musl
-
-
 
       # Windows 构建（动态 CRT）
       - name: Build (Windows dynamic CRT)
