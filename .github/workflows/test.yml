@@ -12,3 +12,5 @@ jobs:
           echo $PATH
           export PATH=/opt/riscv64-linux-musl/bin:$PATH
           echo $PATH
+          export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+          echo $LD_LIBRARY_PATH
