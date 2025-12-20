@@ -14,6 +14,6 @@ jobs:
           echo $PATH
           export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
           echo $LD_LIBRARY_PATH
-          sudo apt update && sudo apt install libc6-dev
+          sudo apt update && sudo apt install libc6-dev libiconv-hook-dev
           sudo find /usr/local/lib -name libiconv.so.2
           
