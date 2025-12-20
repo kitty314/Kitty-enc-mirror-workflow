@@ -87,9 +87,9 @@ jobs:
           CC_riscv64gc_unknown_linux_musl: riscv64-linux-musl-gcc
         run: |
           sudo apt-get update && sudo apt-get install -y build-essential wget
-          git clone https://github.com/richfelker/musl-cross-make
+          git clone --quiet https://github.com/richfelker/musl-cross-make
           cd musl-cross-make
-          make TARGET=riscv64-linux-musl
+          make -s TARGET=riscv64-linux-musl
           sudo make install
           rustup target add riscv64gc-unknown-linux-musl
           cargo build --release --target=riscv64gc-unknown-linux-musl
