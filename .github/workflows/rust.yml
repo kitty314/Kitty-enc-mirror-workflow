@@ -88,6 +88,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-riscv64-linux-gnu g++-riscv64-linux-gnu
+          rustup target add riscv64gc-unknown-linux-gnu
           cargo build --release --target riscv64gc-unknown-linux-gnu
 
       # RISC-V 64 静态构建（musl via cross）
