@@ -100,11 +100,11 @@ jobs:
           AR_riscv64gc_unknown_linux_musl: riscv64-linux-musl-ar
           CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER: riscv64-linux-musl-gcc
         run: |
-          sudo apt-get update && sudo apt-get install -y libiconv-hook-dev
           wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-riscv64-linux-musl-toolchain.tar.gz/x86_64-riscv64-linux-musl-toolchain.tar.gz
           sudo mkdir -p /opt/riscv64-linux-musl
           sudo tar -xzf x86_64-riscv64-linux-musl-toolchain.tar.gz -C /opt/riscv64-linux-musl
           export PATH=/opt/riscv64-linux-musl/bin:$PATH
+          export LD_LIBRARY_PATH=/opt/riscv64-linux-musl/lib:/usr/local/lib:/usr/lib:/lib:$LD_LIBRARY_PATH
           rustup target add riscv64gc-unknown-linux-musl
           cargo build --release --target=riscv64gc-unknown-linux-musl
 
