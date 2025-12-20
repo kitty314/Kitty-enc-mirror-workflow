@@ -1,0 +1,14 @@
+name: test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: |
+          echo $PATH
+          export PATH=/opt/riscv64-linux-musl/bin:$PATH
+          echo $PATH
