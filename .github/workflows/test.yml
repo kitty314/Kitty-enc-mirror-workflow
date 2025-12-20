@@ -14,5 +14,6 @@ jobs:
           echo $PATH
           export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
           echo $LD_LIBRARY_PATH
-          sudo find / -name libgcc_s.so
+          sudo apt update && sudo apt install libc6-dev
+          sudo find /usr/local/lib -name libiconv.so.2
           
