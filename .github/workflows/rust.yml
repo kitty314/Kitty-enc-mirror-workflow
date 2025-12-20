@@ -41,6 +41,14 @@ jobs:
             target: windows-amd64
             crt: static
 
+          - os: ubuntu-24.04
+            target: riscv64-linux
+            crt: dynamic
+
+          - os: ubuntu-24.04
+            target: riscv64-linux
+            crt: static
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,7 +59,7 @@ jobs:
 
       # Linux/macOS 构建
       - name: Build (Linux/macOS)
-        if: matrix.target != 'windows-amd64' && matrix.crt == 'dynamic'
+        if: matrix.target != 'windows-amd64' && matrix.target != 'riscv64-linux' && matrix.crt == 'dynamic'
         run: cargo build --release --verbose
 
       # Linux Arm64 静态构建（musl）
@@ -61,6 +69,22 @@ jobs:
           sudo apt-get update && sudo apt-get install -y musl-tools
           rustup target add aarch64-unknown-linux-musl
           cargo build --release --target aarch64-unknown-linux-musl
+
+      # RISC-V 64 动态构建（glibc）
+      - name: Build (RISC-V 64 dynamic glibc)
+        if: matrix.target == 'riscv64-linux' && matrix.crt == 'dynamic'
+        run: |
+          sudo apt-get update && sudo apt-get install -y gcc-riscv64-linux-gnu
+          rustup target add riscv64gc-unknown-linux-gnu
+          cargo build --release --target riscv64gc-unknown-linux-gnu
+
+      # RISC-V 64 静态构建（musl）
+      - name: Build (RISC-V 64 static musl)
+        if: matrix.target == 'riscv64-linux' && matrix.crt == 'static'
+        run: |
+          sudo apt-get update && sudo apt-get install -y musl-tools
+          rustup target add riscv64gc-unknown-linux-musl
+          cargo build --release --target riscv64gc-unknown-linux-musl
 
       # Windows 构建（动态 CRT）
       - name: Build (Windows dynamic CRT)
@@ -78,13 +102,13 @@ jobs:
 
       # 打包压缩文件（Linux/macOS）
       - name: Package artifact (Linux/macOS)
-        if: matrix.target != 'windows-amd64' && matrix.crt == 'dynamic'
+        if: matrix.target != 'windows-amd64' && matrix.target != 'riscv64-linux' && matrix.crt == 'dynamic'
         shell: bash
         run: |
           mkdir -p dist
           tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C target/release kitty_enc
           
-      # 打包压缩文件（Linux Arm64）静态构建（musl） 
+      # 打包压缩文件（Linux Arm64 静态 musl）
       - name: Package artifact (Linux Arm64 static musl)
         if: matrix.target == 'linux-arm64' && matrix.crt == 'static'
         shell: bash
@@ -93,6 +117,23 @@ jobs:
           BIN_PATH="target/aarch64-unknown-linux-musl/release"
           tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
 
+      # 打包压缩文件（RISC-V 64 动态 glibc）
+      - name: Package artifact (RISC-V 64 dynamic glibc)
+        if: matrix.target == 'riscv64-linux' && matrix.crt == 'dynamic'
+        shell: bash
+        run: |
+          mkdir -p dist
+          BIN_PATH="target/riscv64gc-unknown-linux-gnu/release"
+          tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
+
+      # 打包压缩文件（RISC-V 64 静态 musl）
+      - name: Package artifact (RISC-V 64 static musl)
+        if: matrix.target == 'riscv64-linux' && matrix.crt == 'static'
+        shell: bash
+        run: |
+          mkdir -p dist
+          BIN_PATH="target/riscv64gc-unknown-linux-musl/release"
+          tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
 
       # 打包压缩文件（Windows）
       - name: Package artifact (Windows)
@@ -102,12 +143,12 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist
           Compress-Archive -Path target/release/kitty_enc.exe -DestinationPath dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.zip
 
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: kitty_enc-${{ matrix.target }}-${{ matrix.crt }}
           path: dist/
+
 
   release:
     permissions:
