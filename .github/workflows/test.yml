@@ -14,3 +14,4 @@ jobs:
           echo $PATH
           export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
           echo $LD_LIBRARY_PATH
+          sudo find /usr -name libiconv.so.2
