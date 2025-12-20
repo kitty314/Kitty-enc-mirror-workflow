@@ -41,11 +41,11 @@ jobs:
             target: windows-amd64
             crt: static
 
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             target: riscv64-linux
             crt: dynamic
 
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             target: riscv64-linux
             crt: static
 
@@ -60,7 +60,7 @@ jobs:
       # Linux/macOS 构建
       - name: Build (Linux/macOS)
         if: matrix.target != 'windows-amd64' && matrix.target != 'riscv64-linux' && matrix.crt == 'dynamic'
-        run: cargo build --release --verbose
+        run: cargo build --release
 
       # Linux Arm64 静态构建（musl）
       - name: Build (Linux Arm64 static musl)
@@ -76,15 +76,23 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y gcc-riscv64-linux-gnu
           rustup target add riscv64gc-unknown-linux-gnu
-          cargo build --release --target riscv64gc-unknown-linux-gnu
+          echo '[target.riscv64gc-unknown-linux-gnu]' >> .cargo/config.toml
+          echo 'linker = "riscv64-linux-gnu-gcc"' >> .cargo/config.toml
+          cargo build --release --target=riscv64gc-unknown-linux-gnu
 
       # RISC-V 64 静态构建（musl）
       - name: Build (RISC-V 64 static musl)
         if: matrix.target == 'riscv64-linux' && matrix.crt == 'static'
         run: |
-          sudo apt-get update && sudo apt-get install -y musl-tools
+          sudo apt-get update && sudo apt-get install -y build-essential wget
+          git clone https://github.com/richfelker/musl-cross-make
+          cd musl-cross-make
+          make TARGET=riscv64-linux-musl
+          sudo make install
           rustup target add riscv64gc-unknown-linux-musl
-          cargo build --release --target riscv64gc-unknown-linux-musl
+          echo '[target.riscv64gc-unknown-linux-musl]' >> .cargo/config.toml
+          echo 'linker = "riscv64-linux-musl-gcc"' >> .cargo/config.toml
+          cargo build --release --target=riscv64gc-unknown-linux-musl
 
       # Windows 构建（动态 CRT）
       - name: Build (Windows dynamic CRT)
