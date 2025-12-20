@@ -45,9 +45,9 @@ jobs:
             target: linux-riscv64
             crt: dynamic
 
-          # - os: ubuntu-latest
-          #   target: linux-riscv64
-          #   crt: static
+          - os: ubuntu-latest
+            target: linux-riscv64
+            crt: static
 
     steps:
       - name: Checkout
@@ -91,21 +91,24 @@ jobs:
           rustup target add riscv64gc-unknown-linux-gnu
           cargo build --release --target riscv64gc-unknown-linux-gnu
 
-      # RISC-V 64 静态构建（musl via cross）
-      # - name: Build (RISC-V 64 static musl)
-      #   if: matrix.target == 'linux-riscv64' && matrix.crt == 'static'
-      #   env:
-      #     CC_riscv64gc_unknown_linux_musl: riscv64-linux-musl-gcc
-      #     CXX_riscv64gc_unknown_linux_musl: riscv64-linux-musl-g++
-      #     AR_riscv64gc_unknown_linux_musl: riscv64-linux-musl-ar
-      #   run: |
-      #     sudo apt-get update && sudo apt-get install -y build-essential wget
-      #     git clone --quiet --depth=1 https://github.com/richfelker/musl-cross-make
-      #     cd musl-cross-make
-      #     make -s TARGET=riscv64-linux-musl
-      #     sudo make install
-      #     rustup target add riscv64gc-unknown-linux-musl
-      #     cargo build --release --target=riscv64gc-unknown-linux-musl
+      # RISC-V 64 静态构建（musl）
+      - name: Build (RISC-V 64 static musl)
+        if: matrix.target == 'linux-riscv64' && matrix.crt == 'static'
+        env:
+          CC_riscv64gc_unknown_linux_musl: riscv64-linux-musl-gcc
+          CXX_riscv64gc_unknown_linux_musl: riscv64-linux-musl-g++
+          AR_riscv64gc_unknown_linux_musl: riscv64-linux-musl-ar
+          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER: riscv64-linux-musl-gcc
+          PATH: /opt/riscv64-linux-musl/bin:${PATH}
+        run: |
+          sudo apt-get update && sudo apt-get install -y build-essential wget tar
+          wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-riscv64-linux-musl-toolchain.tar.gz/x86_64-riscv64-linux-musl-toolchain.tar.gz
+          sudo mkdir -p /opt/riscv64-linux-musl
+          tar -xzf x86_64-riscv64-linux-musl-toolchain.tar.gz -C /opt/riscv64-linux-musl
+          rustup target add riscv64gc-unknown-linux-musl
+          cargo build --release --target=riscv64gc-unknown-linux-musl
+
+
 
       # Windows 构建（动态 CRT）
       - name: Build (Windows dynamic CRT)
