@@ -42,11 +42,11 @@ jobs:
             crt: static
 
           - os: ubuntu-latest
-            target: riscv64-linux
+            target: linux-riscv64
             crt: dynamic
 
           # - os: ubuntu-latest
-          #   target: riscv64-linux
+          #   target: linux-riscv64
           #   crt: static
 
     steps:
@@ -59,7 +59,7 @@ jobs:
 
       # Linux/macOS 构建
       - name: Build (Linux/macOS)
-        if: matrix.target != 'windows-amd64' && matrix.target != 'riscv64-linux' && matrix.crt == 'dynamic'
+        if: matrix.target != 'windows-amd64' && matrix.target != 'linux-riscv64' && matrix.crt == 'dynamic'
         run: cargo build --release
 
       # Linux Arm64 静态构建（musl）
@@ -72,14 +72,14 @@ jobs:
 
       # RISC-V 64 动态构建（glibc via cross）
       # - name: Build (RISC-V 64 dynamic glibc via cross)
-      #   if: matrix.target == 'riscv64-linux' && matrix.crt == 'dynamic'
+      #   if: matrix.target == 'linux-riscv64' && matrix.crt == 'dynamic'
       #   run: |
       #     cargo install --locked cross
       #     cross build --release --target riscv64gc-unknown-linux-gnu
 
       # RISC-V 64 动态构建（glibc via system gcc）
       - name: Build (RISC-V 64 dynamic glibc via gcc)
-        if: matrix.target == 'riscv64-linux' && matrix.crt == 'dynamic'
+        if: matrix.target == 'linux-riscv64' && matrix.crt == 'dynamic'
         env:
           CC_riscv64gc_unknown_linux_gnu: riscv64-linux-gnu-gcc
           CXX_riscv64gc_unknown_linux_gnu: riscv64-linux-gnu-g++
@@ -93,7 +93,7 @@ jobs:
 
       # RISC-V 64 静态构建（musl via cross）
       # - name: Build (RISC-V 64 static musl)
-      #   if: matrix.target == 'riscv64-linux' && matrix.crt == 'static'
+      #   if: matrix.target == 'linux-riscv64' && matrix.crt == 'static'
       #   env:
       #     CC_riscv64gc_unknown_linux_musl: riscv64-linux-musl-gcc
       #     CXX_riscv64gc_unknown_linux_musl: riscv64-linux-musl-g++
@@ -123,7 +123,7 @@ jobs:
 
       # 打包压缩文件（Linux/macOS）
       - name: Package artifact (Linux/macOS)
-        if: matrix.target != 'windows-amd64' && matrix.target != 'riscv64-linux' && matrix.crt == 'dynamic'
+        if: matrix.target != 'windows-amd64' && matrix.target != 'linux-riscv64' && matrix.crt == 'dynamic'
         shell: bash
         run: |
           mkdir -p dist
@@ -140,7 +140,7 @@ jobs:
 
       # 打包压缩文件（RISC-V 64 动态 glibc）
       - name: Package artifact (RISC-V 64 dynamic glibc)
-        if: matrix.target == 'riscv64-linux' && matrix.crt == 'dynamic'
+        if: matrix.target == 'linux-riscv64' && matrix.crt == 'dynamic'
         shell: bash
         run: |
           mkdir -p dist
@@ -149,7 +149,7 @@ jobs:
 
       # 打包压缩文件（RISC-V 64 静态 musl）
       - name: Package artifact (RISC-V 64 static musl)
-        if: matrix.target == 'riscv64-linux' && matrix.crt == 'static'
+        if: matrix.target == 'linux-riscv64' && matrix.crt == 'static'
         shell: bash
         run: |
           mkdir -p dist
