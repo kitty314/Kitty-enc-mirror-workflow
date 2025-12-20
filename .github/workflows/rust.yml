@@ -20,33 +20,37 @@ jobs:
           - os: ubuntu-latest
             target: linux-amd64
             crt: dynamic
-            
+                    
           - os: ubuntu-24.04-arm
             target: linux-arm64
             crt: dynamic
+
+          - os: ubuntu-latest
+            target: linux-riscv64
+            crt: dynamic
             
-          - os: ubuntu-24.04-arm
-            target: linux-arm64
-            crt: static
+          - os: windows-latest
+            target: windows-amd64
+            crt: dynamic
             
           - os: macos-latest
             target: macos-arm64
             crt: dynamic
             
-          - os: windows-latest
-            target: windows-amd64
-            crt: dynamic
+          - os: ubuntu-latest
+            target: linux-amd64
+            crt: static
+            
+          - os: ubuntu-latest
+            target: linux-arm64
+            crt: static
+            
+          - os: ubuntu-latest
+            target: linux-riscv64
+            crt: static
             
           - os: windows-latest
             target: windows-amd64
-            crt: static
-
-          - os: ubuntu-latest
-            target: linux-riscv64
-            crt: dynamic
-
-          - os: ubuntu-latest
-            target: linux-riscv64
             crt: static
 
     steps:
@@ -61,22 +65,7 @@ jobs:
       - name: Build (Linux/macOS)
         if: matrix.target != 'windows-amd64' && matrix.target != 'linux-riscv64' && matrix.crt == 'dynamic'
         run: cargo build --release
-
-      # Linux Arm64 静态构建（musl）
-      - name: Build (Linux Arm64 static musl)
-        if: matrix.target == 'linux-arm64' && matrix.crt == 'static'
-        run: |
-          sudo apt-get update && sudo apt-get install -y musl-tools
-          rustup target add aarch64-unknown-linux-musl
-          cargo build --release --target aarch64-unknown-linux-musl
-
-      # RISC-V 64 动态构建（glibc via cross）
-      # - name: Build (RISC-V 64 dynamic glibc via cross)
-      #   if: matrix.target == 'linux-riscv64' && matrix.crt == 'dynamic'
-      #   run: |
-      #     cargo install --locked cross
-      #     cross build --release --target riscv64gc-unknown-linux-gnu
-
+        
       # RISC-V 64 动态构建（glibc via system gcc）
       - name: Build (RISC-V 64 dynamic glibc via gcc)
         if: matrix.target == 'linux-riscv64' && matrix.crt == 'dynamic'
@@ -91,6 +80,49 @@ jobs:
           rustup target add riscv64gc-unknown-linux-gnu
           cargo build --release --target riscv64gc-unknown-linux-gnu
 
+      # Windows 构建（动态 CRT）
+      - name: Build (Windows dynamic CRT)
+        if: matrix.target == 'windows-amd64' && matrix.crt == 'dynamic'
+        shell: pwsh
+        run: cargo build --release --verbose
+
+        
+
+
+      # Linux AMD64 静态构建（musl）
+      - name: Build (Linux AMD64 static musl)
+        if: matrix.target == 'linux-amd64' && matrix.crt == 'static'
+        env:
+          CC_x86_64_unknown_linux_musl: x86_64-linux-musl-gcc
+          CXX_x86_64_unknown_linux_musl: x86_64-linux-musl-g++
+          AR_x86_64_unknown_linux_musl: x86_64-linux-musl-ar
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: x86_64-linux-musl-gcc
+        run: |
+          wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/x86_64-linux-musl-toolchain.tar.gz
+          sudo mkdir -p /opt/x86_64-linux-musl
+          sudo tar -xzf x86_64-linux-musl-toolchain.tar.gz -C /opt/x86_64-linux-musl
+          export PATH=/opt/x86_64-linux-musl/bin:$PATH
+          export LD_LIBRARY_PATH=/usr/share/miniconda/lib:$LD_LIBRARY_PATH
+          rustup target add x86_64-unknown-linux-musl
+          cargo build --release --target=x86_64-unknown-linux-musl
+          
+      # Linux Arm64 静态构建（musl）
+      - name: Build (Linux Arm64 static musl)
+        if: matrix.target == 'linux-arm64' && matrix.crt == 'static'
+        env:
+          CC_aarch64_unknown_linux_musl: aarch64-linux-musl-gcc
+          CXX_aarch64_unknown_linux_musl: aarch64-linux-musl-g++
+          AR_aarch64_unknown_linux_musl: aarch64-linux-musl-ar
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
+        run: |
+          wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/x86_64-aarch64-linux-musl-toolchain.tar.gz
+          sudo mkdir -p /opt/aarch64-linux-musl
+          sudo tar -xzf x86_64-aarch64-linux-musl-toolchain.tar.gz -C /opt/aarch64-linux-musl
+          export PATH=/opt/aarch64-linux-musl/bin:$PATH
+          export LD_LIBRARY_PATH=/usr/share/miniconda/lib:$LD_LIBRARY_PATH
+          rustup target add aarch64-unknown-linux-musl
+          cargo build --release --target=aarch64-unknown-linux-musl
+          
       # RISC-V 64 静态构建（musl）
       - name: Build (RISC-V 64 static musl)
         if: matrix.target == 'linux-riscv64' && matrix.crt == 'static'
@@ -108,12 +140,6 @@ jobs:
           rustup target add riscv64gc-unknown-linux-musl
           cargo build --release --target=riscv64gc-unknown-linux-musl
 
-      # Windows 构建（动态 CRT）
-      - name: Build (Windows dynamic CRT)
-        if: matrix.target == 'windows-amd64' && matrix.crt == 'dynamic'
-        shell: pwsh
-        run: cargo build --release --verbose
-
       # Windows 构建（静态 CRT）
       - name: Build (Windows static CRT)
         if: matrix.target == 'windows-amd64' && matrix.crt == 'static'
@@ -129,15 +155,6 @@ jobs:
         run: |
           mkdir -p dist
           tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C target/release kitty_enc
-          
-      # 打包压缩文件（Linux Arm64 静态 musl）
-      - name: Package artifact (Linux Arm64 static musl)
-        if: matrix.target == 'linux-arm64' && matrix.crt == 'static'
-        shell: bash
-        run: |
-          mkdir -p dist
-          BIN_PATH="target/aarch64-unknown-linux-musl/release"
-          tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
 
       # 打包压缩文件（RISC-V 64 动态 glibc）
       - name: Package artifact (RISC-V 64 dynamic glibc)
@@ -148,6 +165,26 @@ jobs:
           BIN_PATH="target/riscv64gc-unknown-linux-gnu/release"
           tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
 
+
+          
+      # 打包压缩文件（Linux AMD64 静态 musl）
+      - name: Package artifact (Linux AMD64 static musl)
+        if: matrix.target == 'linux-amd64' && matrix.crt == 'static'
+        shell: bash
+        run: |
+          mkdir -p dist
+          BIN_PATH="target/x86_64-unknown-linux-musl/release"
+          tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
+
+      # 打包压缩文件（Linux Arm64 静态 musl）
+      - name: Package artifact (Linux Arm64 static musl)
+        if: matrix.target == 'linux-arm64' && matrix.crt == 'static'
+        shell: bash
+        run: |
+          mkdir -p dist
+          BIN_PATH="target/aarch64-unknown-linux-musl/release"
+          tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
+          
       # 打包压缩文件（RISC-V 64 静态 musl）
       - name: Package artifact (RISC-V 64 static musl)
         if: matrix.target == 'linux-riscv64' && matrix.crt == 'static'
