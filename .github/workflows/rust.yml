@@ -45,9 +45,9 @@ jobs:
             target: riscv64-linux
             crt: dynamic
 
-          - os: ubuntu-latest
-            target: riscv64-linux
-            crt: static
+          # - os: ubuntu-latest
+          #   target: riscv64-linux
+          #   crt: static
 
     steps:
       - name: Checkout
@@ -71,27 +71,40 @@ jobs:
           cargo build --release --target aarch64-unknown-linux-musl
 
       # RISC-V 64 动态构建（glibc via cross）
-      - name: Build (RISC-V 64 dynamic glibc via cross)
+      # - name: Build (RISC-V 64 dynamic glibc via cross)
+      #   if: matrix.target == 'riscv64-linux' && matrix.crt == 'dynamic'
+      #   run: |
+      #     cargo install --locked cross
+      #     cross build --release --target riscv64gc-unknown-linux-gnu
+
+      # RISC-V 64 动态构建（glibc via system gcc）
+      - name: Build (RISC-V 64 dynamic glibc via gcc)
         if: matrix.target == 'riscv64-linux' && matrix.crt == 'dynamic'
-        run: |
-          cargo install --locked cross
-          cross build --release --target riscv64gc-unknown-linux-gnu
-      
-      # RISC-V 64 静态构建（musl via cross）
-      - name: Build (RISC-V 64 static musl)
-        if: matrix.target == 'riscv64-linux' && matrix.crt == 'static'
         env:
-          CC_riscv64gc_unknown_linux_musl: riscv64-linux-musl-gcc
-          CXX_riscv64gc_unknown_linux_musl: riscv64-linux-musl-g++
-          AR_riscv64gc_unknown_linux_musl: riscv64-linux-musl-ar
+          CC_riscv64gc_unknown_linux_gnu: riscv64-linux-gnu-gcc
+          CXX_riscv64gc_unknown_linux_gnu: riscv64-linux-gnu-g++
+          AR_riscv64gc_unknown_linux_gnu: riscv64-linux-gnu-ar
+          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_LINKER: riscv64-linux-gnu-gcc
         run: |
-          sudo apt-get update && sudo apt-get install -y build-essential wget
-          git clone --quiet --depth=1 https://github.com/richfelker/musl-cross-make
-          cd musl-cross-make
-          make -s TARGET=riscv64-linux-musl
-          sudo make install
-          rustup target add riscv64gc-unknown-linux-musl
-          cargo build --release --target=riscv64gc-unknown-linux-musl
+          sudo apt-get update
+          sudo apt-get install -y gcc-riscv64-linux-gnu g++-riscv64-linux-gnu
+          cargo build --release --target riscv64gc-unknown-linux-gnu
+
+      # RISC-V 64 静态构建（musl via cross）
+      # - name: Build (RISC-V 64 static musl)
+      #   if: matrix.target == 'riscv64-linux' && matrix.crt == 'static'
+      #   env:
+      #     CC_riscv64gc_unknown_linux_musl: riscv64-linux-musl-gcc
+      #     CXX_riscv64gc_unknown_linux_musl: riscv64-linux-musl-g++
+      #     AR_riscv64gc_unknown_linux_musl: riscv64-linux-musl-ar
+      #   run: |
+      #     sudo apt-get update && sudo apt-get install -y build-essential wget
+      #     git clone --quiet --depth=1 https://github.com/richfelker/musl-cross-make
+      #     cd musl-cross-make
+      #     make -s TARGET=riscv64-linux-musl
+      #     sudo make install
+      #     rustup target add riscv64gc-unknown-linux-musl
+      #     cargo build --release --target=riscv64gc-unknown-linux-musl
 
       # Windows 构建（动态 CRT）
       - name: Build (Windows dynamic CRT)
