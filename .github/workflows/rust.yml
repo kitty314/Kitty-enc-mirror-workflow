@@ -86,9 +86,6 @@ jobs:
         shell: pwsh
         run: cargo build --release --verbose
 
-        
-
-
       # Linux AMD64 静态构建（musl）
       - name: Build (Linux AMD64 static musl)
         if: matrix.target == 'linux-amd64' && matrix.crt == 'static'
@@ -99,10 +96,11 @@ jobs:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: x86_64-linux-musl-gcc
         run: |
           wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/x86_64-linux-musl-toolchain.tar.gz
+          wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/libiconv-1.18.tar.gz
           sudo mkdir -p /opt/x86_64-linux-musl
           sudo tar -xzf x86_64-linux-musl-toolchain.tar.gz -C /opt/x86_64-linux-musl
+          sudo tar -xzf libiconv-1.18.tar.gz -C /opt/x86_64-linux-musl
           export PATH=/opt/x86_64-linux-musl/bin:$PATH
-          export LD_LIBRARY_PATH=/usr/share/miniconda/lib:$LD_LIBRARY_PATH
           rustup target add x86_64-unknown-linux-musl
           cargo build --release --target=x86_64-unknown-linux-musl
           
@@ -116,10 +114,11 @@ jobs:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
         run: |
           wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/x86_64-aarch64-linux-musl-toolchain.tar.gz
+          wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/libiconv-1.18.tar.gz
           sudo mkdir -p /opt/aarch64-linux-musl
           sudo tar -xzf x86_64-aarch64-linux-musl-toolchain.tar.gz -C /opt/aarch64-linux-musl
+          sudo tar -xzf libiconv-1.18.tar.gz -C /opt/aarch64-linux-musl
           export PATH=/opt/aarch64-linux-musl/bin:$PATH
-          export LD_LIBRARY_PATH=/usr/share/miniconda/lib:$LD_LIBRARY_PATH
           rustup target add aarch64-unknown-linux-musl
           cargo build --release --target=aarch64-unknown-linux-musl
           
@@ -133,10 +132,11 @@ jobs:
           CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER: riscv64-linux-musl-gcc
         run: |
           wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/x86_64-riscv64-linux-musl-toolchain.tar.gz
+          wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/libiconv-1.18.tar.gz
           sudo mkdir -p /opt/riscv64-linux-musl
           sudo tar -xzf x86_64-riscv64-linux-musl-toolchain.tar.gz -C /opt/riscv64-linux-musl
+          sudo tar -xzf libiconv-1.18.tar.gz -C /opt/riscv64-linux-musl
           export PATH=/opt/riscv64-linux-musl/bin:$PATH
-          export LD_LIBRARY_PATH=/usr/share/miniconda/lib:$LD_LIBRARY_PATH
           rustup target add riscv64gc-unknown-linux-musl
           cargo build --release --target=riscv64gc-unknown-linux-musl
 
