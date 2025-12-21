@@ -99,8 +99,10 @@ jobs:
           wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/libiconv-1.18.tar.gz
           sudo mkdir -p /opt/x86_64-linux-musl
           sudo tar -xzf x86_64-linux-musl-toolchain.tar.gz -C /opt/x86_64-linux-musl
-          sudo tar -xzf libiconv-1.18.tar.gz -C /opt/x86_64-linux-musl
           export PATH=/opt/x86_64-linux-musl/bin:$PATH
+          sudo mkdir -p /opt/libiconv-1.18
+          sudo tar -xzf libiconv-1.18.tar.gz -C /opt/libiconv-1.18
+          export LD_LIBRARY_PATH=/opt/libiconv-1.18/lib:$LD_LIBRARY_PATH
           rustup target add x86_64-unknown-linux-musl
           cargo build --release --target=x86_64-unknown-linux-musl
           
@@ -117,8 +119,10 @@ jobs:
           wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/libiconv-1.18.tar.gz
           sudo mkdir -p /opt/aarch64-linux-musl
           sudo tar -xzf x86_64-aarch64-linux-musl-toolchain.tar.gz -C /opt/aarch64-linux-musl
-          sudo tar -xzf libiconv-1.18.tar.gz -C /opt/aarch64-linux-musl
           export PATH=/opt/aarch64-linux-musl/bin:$PATH
+          sudo mkdir -p /opt/libiconv-1.18
+          sudo tar -xzf libiconv-1.18.tar.gz -C /opt/libiconv-1.18
+          export LD_LIBRARY_PATH=/opt/libiconv-1.18/lib:$LD_LIBRARY_PATH
           rustup target add aarch64-unknown-linux-musl
           cargo build --release --target=aarch64-unknown-linux-musl
           
@@ -135,8 +139,10 @@ jobs:
           wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/libiconv-1.18.tar.gz
           sudo mkdir -p /opt/riscv64-linux-musl
           sudo tar -xzf x86_64-riscv64-linux-musl-toolchain.tar.gz -C /opt/riscv64-linux-musl
-          sudo tar -xzf libiconv-1.18.tar.gz -C /opt/riscv64-linux-musl
           export PATH=/opt/riscv64-linux-musl/bin:$PATH
+          sudo mkdir -p /opt/libiconv-1.18
+          sudo tar -xzf libiconv-1.18.tar.gz -C /opt/libiconv-1.18
+          export LD_LIBRARY_PATH=/opt/libiconv-1.18/lib:$LD_LIBRARY_PATH
           rustup target add riscv64gc-unknown-linux-musl
           cargo build --release --target=riscv64gc-unknown-linux-musl
 
