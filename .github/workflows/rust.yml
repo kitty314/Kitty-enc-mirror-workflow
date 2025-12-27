@@ -263,4 +263,4 @@ jobs:
           files: |
             artifacts/*
           prerelease: true
-          body: ${{ github.event.inputs.version }}测试版， 准备重构
+          body: ${{ github.event.inputs.version }}测试版， 0.4.*版本与0.3.*版本不兼容
