@@ -228,52 +228,52 @@ jobs:
             name: kitty_enc-${{ matrix.target }}-${{ matrix.crt }}
             path: dist/
   
-    release:
-      permissions:
-        contents: write
-      needs: build
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v4
-          with:
-            fetch-depth: 0
-            fetch-tags: true
-    
-        - name: Download artifacts
-          uses: actions/download-artifact@v4
-          with:
-            path: artifacts/
-            merge-multiple: true
-            
-        - name: List artifacts
-          run: ls -R artifacts/
-    
-        - name: Generate SHA256 checksums
-          run: |
-            cd artifacts
-            find . -type f ! -name SHA256SUMS.sha256 -exec sha256sum {} \; > SHA256SUMS.sha256
-            cat SHA256SUMS.sha256
-    
-        # 自动打 tag
-        - name: Create Git tag
-          run: |
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            if git rev-parse ${{ github.event.inputs.version }} >/dev/null 2>&1; then
-              echo "Tag already exists"
-            else
-              git tag ${{ github.event.inputs.version }}
-              git push origin ${{ github.event.inputs.version }}
-            fi
-        
-    
-        - name: Upload Release
-          uses: softprops/action-gh-release@v2
-          if: ${{ success() }}
-          with:
-            tag_name: ${{ github.event.inputs.version }}
-            files: |
-              artifacts/*
-            prerelease: true
-            body: ${{ github.event.inputs.version }}测试版， 0.5.*版本与以前的版本不兼容，0.5.*各版本之间也可能不兼容
+  release:
+    permissions:
+      contents: write
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+  
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+          
+      - name: List artifacts
+        run: ls -R artifacts/
+  
+      - name: Generate SHA256 checksums
+        run: |
+          cd artifacts
+          find . -type f ! -name SHA256SUMS.sha256 -exec sha256sum {} \; > SHA256SUMS.sha256
+          cat SHA256SUMS.sha256
+  
+      # 自动打 tag
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse ${{ github.event.inputs.version }} >/dev/null 2>&1; then
+            echo "Tag already exists"
+          else
+            git tag ${{ github.event.inputs.version }}
+            git push origin ${{ github.event.inputs.version }}
+          fi
+      
+  
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        if: ${{ success() }}
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          files: |
+            artifacts/*
+          prerelease: true
+          body: ${{ github.event.inputs.version }}测试版， 0.5.*版本与以前的版本不兼容，0.5.*各版本之间也可能不兼容
