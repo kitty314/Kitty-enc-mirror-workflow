@@ -1,0 +1,279 @@
+name: Mirror and Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+        type: string
+env:
+  CARGO_TERM_COLOR: always
+  
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+          contents: write
+    steps:
+      - name: Mirror repository
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+        run: |
+          git clone --mirror https://gitea.com/Kitty314/Kitty-enc.git
+          cd Kitty-enc.git
+          git remote set-url origin https://x-access-token:${MIRROR_TOKEN}@github.com/kitty314/Kitty-enc.git
+          git push --mirror
+
+  build:
+      needs: sync
+      runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          include:
+            - os: ubuntu-latest
+              target: linux-amd64
+              crt: dynamic
+                      
+            - os: ubuntu-24.04-arm
+              target: linux-arm64
+              crt: dynamic
+  
+            - os: ubuntu-latest
+              target: linux-riscv64
+              crt: dynamic
+              
+            - os: windows-latest
+              target: windows-amd64
+              crt: dynamic
+              
+            - os: macos-latest
+              target: macos-arm64
+              crt: dynamic
+              
+            - os: ubuntu-latest
+              target: linux-amd64
+              crt: static
+              
+            - os: ubuntu-latest
+              target: linux-arm64
+              crt: static
+              
+            - os: ubuntu-latest
+              target: linux-riscv64
+              crt: static
+              
+            - os: windows-latest
+              target: windows-amd64
+              crt: static
+  
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+            repository: kitty314/Kitty-enc
+            ref: main
+  
+        # Linux/macOS 构建
+        - name: Build (Linux/macOS)
+          if: matrix.target != 'windows-amd64' && matrix.target != 'linux-riscv64' && matrix.crt == 'dynamic'
+          run: cargo build --release
+          
+        # RISC-V 64 动态构建（glibc via system gcc）
+        - name: Build (RISC-V 64 dynamic glibc via gcc)
+          if: matrix.target == 'linux-riscv64' && matrix.crt == 'dynamic'
+          env:
+            CC_riscv64gc_unknown_linux_gnu: riscv64-linux-gnu-gcc
+            CXX_riscv64gc_unknown_linux_gnu: riscv64-linux-gnu-g++
+            AR_riscv64gc_unknown_linux_gnu: riscv64-linux-gnu-ar
+            CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_LINKER: riscv64-linux-gnu-gcc
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y gcc-riscv64-linux-gnu g++-riscv64-linux-gnu
+            rustup target add riscv64gc-unknown-linux-gnu
+            cargo build --release --target riscv64gc-unknown-linux-gnu
+  
+        # Windows 构建（动态 CRT）
+        - name: Build (Windows dynamic CRT)
+          if: matrix.target == 'windows-amd64' && matrix.crt == 'dynamic'
+          shell: pwsh
+          run: cargo build --release --verbose
+  
+        # Linux AMD64 静态构建（musl）
+        - name: Build (Linux AMD64 static musl)
+          if: matrix.target == 'linux-amd64' && matrix.crt == 'static'
+          env:
+            CC_x86_64_unknown_linux_musl: x86_64-linux-musl-gcc
+            CXX_x86_64_unknown_linux_musl: x86_64-linux-musl-g++
+            AR_x86_64_unknown_linux_musl: x86_64-linux-musl-ar
+            CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: x86_64-linux-musl-gcc
+          run: |
+            wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/x86_64-linux-musl-toolchain.tar.gz
+            wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/libiconv-1.18.tar.gz
+            sudo mkdir -p /opt/x86_64-linux-musl
+            sudo tar -xzf x86_64-linux-musl-toolchain.tar.gz -C /opt/x86_64-linux-musl
+            export PATH=/opt/x86_64-linux-musl/bin:$PATH
+            sudo mkdir -p /opt/libiconv-1.18
+            sudo tar -xzf libiconv-1.18.tar.gz -C /opt/libiconv-1.18
+            export LD_LIBRARY_PATH=/opt/libiconv-1.18/lib:$LD_LIBRARY_PATH
+            rustup target add x86_64-unknown-linux-musl
+            cargo build --release --target=x86_64-unknown-linux-musl
+            
+        # Linux Arm64 静态构建（musl）
+        - name: Build (Linux Arm64 static musl)
+          if: matrix.target == 'linux-arm64' && matrix.crt == 'static'
+          env:
+            CC_aarch64_unknown_linux_musl: aarch64-linux-musl-gcc
+            CXX_aarch64_unknown_linux_musl: aarch64-linux-musl-g++
+            AR_aarch64_unknown_linux_musl: aarch64-linux-musl-ar
+            CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
+          run: |
+            wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/x86_64-aarch64-linux-musl-toolchain.tar.gz
+            wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/libiconv-1.18.tar.gz
+            sudo mkdir -p /opt/aarch64-linux-musl
+            sudo tar -xzf x86_64-aarch64-linux-musl-toolchain.tar.gz -C /opt/aarch64-linux-musl
+            export PATH=/opt/aarch64-linux-musl/bin:$PATH
+            sudo mkdir -p /opt/libiconv-1.18
+            sudo tar -xzf libiconv-1.18.tar.gz -C /opt/libiconv-1.18
+            export LD_LIBRARY_PATH=/opt/libiconv-1.18/lib:$LD_LIBRARY_PATH
+            rustup target add aarch64-unknown-linux-musl
+            cargo build --release --target=aarch64-unknown-linux-musl
+            
+        # RISC-V 64 静态构建（musl）
+        - name: Build (RISC-V 64 static musl)
+          if: matrix.target == 'linux-riscv64' && matrix.crt == 'static'
+          env:
+            CC_riscv64gc_unknown_linux_musl: riscv64-linux-musl-gcc
+            CXX_riscv64gc_unknown_linux_musl: riscv64-linux-musl-g++
+            AR_riscv64gc_unknown_linux_musl: riscv64-linux-musl-ar
+            CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER: riscv64-linux-musl-gcc
+          run: |
+            wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/x86_64-riscv64-linux-musl-toolchain.tar.gz
+            wget -q https://github.com/kitty314/Kitty-enc-mirror-workflow/releases/download/x86_64-some-linux-musl-toolchain/libiconv-1.18.tar.gz
+            sudo mkdir -p /opt/riscv64-linux-musl
+            sudo tar -xzf x86_64-riscv64-linux-musl-toolchain.tar.gz -C /opt/riscv64-linux-musl
+            export PATH=/opt/riscv64-linux-musl/bin:$PATH
+            sudo mkdir -p /opt/libiconv-1.18
+            sudo tar -xzf libiconv-1.18.tar.gz -C /opt/libiconv-1.18
+            export LD_LIBRARY_PATH=/opt/libiconv-1.18/lib:$LD_LIBRARY_PATH
+            rustup target add riscv64gc-unknown-linux-musl
+            cargo build --release --target=riscv64gc-unknown-linux-musl
+  
+        # Windows 构建（静态 CRT）
+        - name: Build (Windows static CRT)
+          if: matrix.target == 'windows-amd64' && matrix.crt == 'static'
+          shell: pwsh
+          run: |
+            $env:RUSTFLAGS="-C target-feature=+crt-static"
+            cargo build --release --verbose
+  
+        # 打包压缩文件（Linux/macOS）
+        - name: Package artifact (Linux/macOS)
+          if: matrix.target != 'windows-amd64' && matrix.target != 'linux-riscv64' && matrix.crt == 'dynamic'
+          shell: bash
+          run: |
+            mkdir -p dist
+            tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C target/release kitty_enc
+  
+        # 打包压缩文件（RISC-V 64 动态 glibc）
+        - name: Package artifact (RISC-V 64 dynamic glibc)
+          if: matrix.target == 'linux-riscv64' && matrix.crt == 'dynamic'
+          shell: bash
+          run: |
+            mkdir -p dist
+            BIN_PATH="target/riscv64gc-unknown-linux-gnu/release"
+            tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
+  
+  
+            
+        # 打包压缩文件（Linux AMD64 静态 musl）
+        - name: Package artifact (Linux AMD64 static musl)
+          if: matrix.target == 'linux-amd64' && matrix.crt == 'static'
+          shell: bash
+          run: |
+            mkdir -p dist
+            BIN_PATH="target/x86_64-unknown-linux-musl/release"
+            tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
+  
+        # 打包压缩文件（Linux Arm64 静态 musl）
+        - name: Package artifact (Linux Arm64 static musl)
+          if: matrix.target == 'linux-arm64' && matrix.crt == 'static'
+          shell: bash
+          run: |
+            mkdir -p dist
+            BIN_PATH="target/aarch64-unknown-linux-musl/release"
+            tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
+            
+        # 打包压缩文件（RISC-V 64 静态 musl）
+        - name: Package artifact (RISC-V 64 static musl)
+          if: matrix.target == 'linux-riscv64' && matrix.crt == 'static'
+          shell: bash
+          run: |
+            mkdir -p dist
+            BIN_PATH="target/riscv64gc-unknown-linux-musl/release"
+            tar -czf dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.tar.gz -C $BIN_PATH kitty_enc
+  
+        # 打包压缩文件（Windows）
+        - name: Package artifact (Windows)
+          if: matrix.target == 'windows-amd64'
+          shell: pwsh
+          run: |
+            New-Item -ItemType Directory -Force -Path dist
+            Compress-Archive -Path target/release/kitty_enc.exe -DestinationPath dist/kitty_enc-${{ matrix.target }}-${{ matrix.crt }}.zip
+  
+        - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: kitty_enc-${{ matrix.target }}-${{ matrix.crt }}
+            path: dist/
+  
+    release:
+      permissions:
+        contents: write
+      needs: build
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+            fetch-tags: true
+    
+        - name: Download artifacts
+          uses: actions/download-artifact@v4
+          with:
+            path: artifacts/
+            merge-multiple: true
+            
+        - name: List artifacts
+          run: ls -R artifacts/
+    
+        - name: Generate SHA256 checksums
+          run: |
+            cd artifacts
+            find . -type f ! -name SHA256SUMS.sha256 -exec sha256sum {} \; > SHA256SUMS.sha256
+            cat SHA256SUMS.sha256
+    
+        # 自动打 tag
+        - name: Create Git tag
+          run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            if git rev-parse ${{ github.event.inputs.version }} >/dev/null 2>&1; then
+              echo "Tag already exists"
+            else
+              git tag ${{ github.event.inputs.version }}
+              git push origin ${{ github.event.inputs.version }}
+            fi
+        
+    
+        - name: Upload Release
+          uses: softprops/action-gh-release@v2
+          if: ${{ success() }}
+          with:
+            tag_name: ${{ github.event.inputs.version }}
+            files: |
+              artifacts/*
+            prerelease: true
+            body: ${{ github.event.inputs.version }}测试版， 0.5.*版本与以前的版本不兼容，0.5.*各版本之间也可能不兼容
