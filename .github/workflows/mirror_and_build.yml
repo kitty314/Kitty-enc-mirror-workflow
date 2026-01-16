@@ -276,4 +276,4 @@ jobs:
           files: |
             artifacts/*
           prerelease: true
-          body: ${{ github.event.inputs.version }}测试版， 0.5.*版本与以前的版本不兼容，0.5.*各版本之间也可能不兼容
+          body: ${{ github.event.inputs.version }}测试版， 0.5.21~0.6.*的不兼容性更新: 主密钥大小增加到48字节; 默认不再递归文件夹
