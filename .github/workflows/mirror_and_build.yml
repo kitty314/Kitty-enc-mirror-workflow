@@ -278,7 +278,5 @@ jobs:
           prerelease: true
           body: |
             ## ${{ github.event.inputs.version }}测试版
-            - 将0.6.0-r.*的所有可兼容变更追加到0.5.21
-            - 大幅简化-h帮助, 详细帮助转移至--help
-            - 修改base模式: 默认为交互式编码
+            - 修复: 命令行编辑器死循环无法退出的问题
 
